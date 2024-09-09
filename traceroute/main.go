@@ -18,14 +18,12 @@ func main() {
 
 	target := os.Args[1]
 
-	// Resolve the target address
 	ipAddr, err := net.ResolveIPAddr("ip4", target)
 	if err != nil {
 		fmt.Printf("Failed to resolve IP address: %v\n", err)
 		return
 	}
 
-	// Listen for ICMP replies
 	conn, err := icmp.ListenPacket("ip4:icmp", "0.0.0.0")
 	if err != nil {
 		fmt.Printf("Failed to listen for ICMP packets: %v\n", err)
@@ -38,13 +36,11 @@ func main() {
 	const packetSize = 52
 
 	for ttl := 1; ttl <= maxHops; ttl++ {
-		// Set the TTL for the outgoing packet
 		if err := conn.IPv4PacketConn().SetTTL(ttl); err != nil {
 			fmt.Printf("Failed to set TTL: %v\n", err)
 			return
 		}
 
-		// Create an ICMP echo request message
 		msg := icmp.Message{
 			Type: ipv4.ICMPTypeEcho,
 			Code: 0,
@@ -63,17 +59,14 @@ func main() {
 
 		start := time.Now()
 
-		// Send the ICMP echo request
 		_, err = conn.WriteTo(msgBytes, ipAddr)
 		if err != nil {
 			fmt.Printf("Failed to send ICMP request: %v\n", err)
 			return
 		}
 
-		// Set the read deadline
 		conn.SetReadDeadline(time.Now().Add(timeout))
 
-		// Buffer to receive the ICMP reply
 		reply := make([]byte, 1500)
 		n, peer, err := conn.ReadFrom(reply)
 		duration := time.Since(start)
@@ -83,7 +76,6 @@ func main() {
 			continue
 		}
 
-		// Parse the ICMP reply
 		rm, err := icmp.ParseMessage(1, reply[:n])
 		if err != nil {
 			fmt.Printf("Failed to parse ICMP reply: %v\n", err)
